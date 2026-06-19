@@ -2,6 +2,8 @@ const els = {
   form: document.querySelector("#audienceForm"),
   audienceName: document.querySelector("#audienceName"),
   accountId: document.querySelector("#accountId"),
+  publicKey: document.querySelector("#publicKey"),
+  privateKey: document.querySelector("#privateKey"),
   emailInput: document.querySelector("#emailInput"),
   fileInput: document.querySelector("#fileInput"),
   headerToggle: document.querySelector("#headerToggle"),
@@ -39,6 +41,7 @@ function loadSettings() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     if (typeof saved.audienceName === "string") els.audienceName.value = saved.audienceName;
     if (typeof saved.accountId === "string") els.accountId.value = saved.accountId;
+    if (typeof saved.publicKey === "string") els.publicKey.value = saved.publicKey;
     if (typeof saved.includeHeader === "boolean") els.headerToggle.checked = saved.includeHeader;
     if (typeof saved.hashExport === "boolean") els.hashToggle.checked = saved.hashExport;
     if (typeof saved.action === "string") {
@@ -59,6 +62,7 @@ function saveSettings() {
   const settings = {
     audienceName: els.audienceName.value.trim(),
     accountId: els.accountId.value.trim(),
+    publicKey: els.publicKey.value.trim(),
     includeHeader: els.headerToggle.checked,
     hashExport: els.hashToggle.checked,
     action: getAction(),
@@ -204,18 +208,19 @@ function buildPayload() {
 
 function buildCurl() {
   const payload = buildPayload().deprecatedCustomAudienceApi;
-  return [
-    "curl -X POST https://data.rokt.com/v3/import/suppression \\",
-    '  --user "rpub-REPLACE_ME:rsec-REPLACE_ME" \\',
-    '  --header "Content-Type: application/json" \\',
-    `  --data '${JSON.stringify(payload)}'`,
-  ].join("\n");
+  const publicKey = els.publicKey.value.trim() || "rpub-REPLACE_ME";
+  return String.raw`curl -X POST https://data.rokt.com/v3/import/suppression \
+  --user "${publicKey}:PRIVATE_KEY_FROM_FORM" \
+  --header "Content-Type: application/json" \
+  --data '${JSON.stringify(payload)}'`;
 }
 
 function buildUploadRequest() {
   const audienceName = slugify(els.audienceName.value, "audience");
   return {
     accountId: els.accountId.value.trim(),
+    publicKey: els.publicKey.value.trim(),
+    privateKey: els.privateKey.value.trim(),
     list: audienceName,
     action: getAction(),
     identifierType: els.hashToggle.checked ? "sha256" : "email",
@@ -360,6 +365,13 @@ async function uploadToRokt() {
 
   if (window.location.protocol === "file:") {
     setUploadStatus("Open the local server URL to upload to Rokt.", "error");
+    return;
+  }
+
+  const publicKey = els.publicKey.value.trim();
+  const privateKey = els.privateKey.value.trim();
+  if ((publicKey && !privateKey) || (!publicKey && privateKey)) {
+    setUploadStatus("Enter both key fields, or leave both blank to use .env.", "error");
     return;
   }
 

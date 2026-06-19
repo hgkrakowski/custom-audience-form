@@ -18,10 +18,11 @@ Open `index.html` in a browser.
 
 For direct upload:
 
-1. Copy `.env.example` to `.env`.
-2. Add the Rokt public key, secret key, and account ID.
-3. Run `node server.js`.
-4. Open `http://127.0.0.1:8787`.
+1. Run `node server.js`.
+2. Open `http://127.0.0.1:8787`.
+3. Add the Rokt public/private key pair in the form before uploading.
+
+You can also copy `.env.example` to `.env` and store the key pair plus account ID locally. The form-provided keys are used first; `.env` is only a fallback. Do not commit `.env`.
 
 ## Rokt upload path
 
