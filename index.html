@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Audience CSV Builder</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-label="Audience CSV builder">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Rokt audience prep</p>
+            <h1>Audience CSV Builder</h1>
+          </div>
+          <div class="status-strip" aria-live="polite">
+            <span><strong id="validCount">0</strong> ready</span>
+            <span><strong id="duplicateCount">0</strong> duplicates</span>
+            <span><strong id="invalidCount">0</strong> invalid</span>
+          </div>
+        </header>
+
+        <section class="tool-grid">
+          <form class="entry-panel" id="audienceForm">
+            <div class="field-row two-up">
+              <label>
+                <span>Audience/list name</span>
+                <input id="audienceName" name="audienceName" type="text" placeholder="Example: summer_retargeting" autocomplete="off">
+              </label>
+              <label>
+                <span>Account ID</span>
+                <input id="accountId" name="accountId" type="text" placeholder="Optional for API payload" autocomplete="off">
+              </label>
+            </div>
+
+            <fieldset class="segmented" aria-label="Action">
+              <legend>Action</legend>
+              <label>
+                <input type="radio" name="action" value="include" checked>
+                <span>Add</span>
+              </label>
+              <label>
+                <input type="radio" name="action" value="exclude">
+                <span>Remove</span>
+              </label>
+            </fieldset>
+
+            <label class="textarea-label" for="emailInput">
+              <span>Email addresses</span>
+              <textarea id="emailInput" rows="14" spellcheck="false" placeholder="customer@example.com&#10;second.customer@example.com"></textarea>
+            </label>
+
+            <div class="drop-row">
+              <label class="file-button">
+                <input id="fileInput" type="file" accept=".csv,.txt,text/csv,text/plain">
+                Import file
+              </label>
+              <button class="ghost-button" type="button" id="clearButton">Clear</button>
+            </div>
+
+            <div class="options-grid">
+              <label class="switch-row">
+                <input id="headerToggle" type="checkbox" checked>
+                <span>Include header row</span>
+              </label>
+              <label class="switch-row">
+                <input id="hashToggle" type="checkbox">
+                <span>Export SHA-256 hashes</span>
+              </label>
+              <label class="switch-row">
+                <input id="saveSettingsToggle" type="checkbox" checked>
+                <span>Remember settings</span>
+              </label>
+            </div>
+
+            <div class="action-row">
+              <button class="primary-button" type="button" id="downloadButton">Download CSV</button>
+              <button class="secondary-button" type="button" id="copyEmailsButton">Copy emails</button>
+              <button class="secondary-button upload-button" type="button" id="uploadButton">Upload to Rokt</button>
+            </div>
+            <p class="upload-status" id="uploadStatus" aria-live="polite"></p>
+          </form>
+
+          <aside class="review-panel" aria-label="Review and exports">
+            <section class="panel-block">
+              <div class="section-title">
+                <h2>Clean list</h2>
+                <button class="text-button" type="button" id="copyInvalidButton">Copy invalid</button>
+              </div>
+              <div class="preview-table" id="previewTable" role="table" aria-label="Clean email preview">
+                <div class="empty-state">Paste emails to preview the cleaned list.</div>
+              </div>
+            </section>
+
+            <section class="panel-block">
+              <div class="section-title">
+                <h2>API payload</h2>
+                <button class="text-button" type="button" id="copyPayloadButton">Copy JSON</button>
+              </div>
+              <pre id="payloadPreview" class="payload-box" aria-label="API payload preview">{}</pre>
+            </section>
+
+            <section class="panel-block">
+              <div class="section-title">
+                <h2>Command</h2>
+                <button class="text-button" type="button" id="copyCurlButton">Copy</button>
+              </div>
+              <pre id="curlPreview" class="payload-box compact" aria-label="Command preview"></pre>
+            </section>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./script.js"></script>
+  </body>
+</html>
