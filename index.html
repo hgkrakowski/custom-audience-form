@@ -34,14 +34,10 @@
               </label>
             </div>
 
-            <div class="field-row two-up key-row">
+            <div class="field-row auth-row">
               <label>
-                <span>Public key</span>
-                <input id="publicKey" name="publicKey" type="text" placeholder="rpub-..." autocomplete="off">
-              </label>
-              <label>
-                <span>Private key</span>
-                <input id="privateKey" name="privateKey" type="password" placeholder="rsec-..." autocomplete="off">
+                <span>JWT</span>
+                <input id="jwtToken" name="jwtToken" type="password" placeholder="Paste bearer token" autocomplete="off">
               </label>
             </div>
 
@@ -74,10 +70,6 @@
               <label class="switch-row">
                 <input id="headerToggle" type="checkbox" checked>
                 <span>Include header row</span>
-              </label>
-              <label class="switch-row">
-                <input id="hashToggle" type="checkbox">
-                <span>Export SHA-256 hashes</span>
               </label>
               <label class="switch-row">
                 <input id="saveSettingsToggle" type="checkbox" checked>

@@ -2,12 +2,10 @@ const els = {
   form: document.querySelector("#audienceForm"),
   audienceName: document.querySelector("#audienceName"),
   accountId: document.querySelector("#accountId"),
-  publicKey: document.querySelector("#publicKey"),
-  privateKey: document.querySelector("#privateKey"),
+  jwtToken: document.querySelector("#jwtToken"),
   emailInput: document.querySelector("#emailInput"),
   fileInput: document.querySelector("#fileInput"),
   headerToggle: document.querySelector("#headerToggle"),
-  hashToggle: document.querySelector("#hashToggle"),
   saveSettingsToggle: document.querySelector("#saveSettingsToggle"),
   downloadButton: document.querySelector("#downloadButton"),
   copyEmailsButton: document.querySelector("#copyEmailsButton"),
@@ -33,7 +31,6 @@ const state = {
   valid: [],
   invalid: [],
   duplicates: [],
-  hashed: [],
 };
 
 function loadSettings() {
@@ -41,9 +38,7 @@ function loadSettings() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     if (typeof saved.audienceName === "string") els.audienceName.value = saved.audienceName;
     if (typeof saved.accountId === "string") els.accountId.value = saved.accountId;
-    if (typeof saved.publicKey === "string") els.publicKey.value = saved.publicKey;
     if (typeof saved.includeHeader === "boolean") els.headerToggle.checked = saved.includeHeader;
-    if (typeof saved.hashExport === "boolean") els.hashToggle.checked = saved.hashExport;
     if (typeof saved.action === "string") {
       const actionInput = document.querySelector(`input[name="action"][value="${saved.action}"]`);
       if (actionInput) actionInput.checked = true;
@@ -62,9 +57,7 @@ function saveSettings() {
   const settings = {
     audienceName: els.audienceName.value.trim(),
     accountId: els.accountId.value.trim(),
-    publicKey: els.publicKey.value.trim(),
     includeHeader: els.headerToggle.checked,
-    hashExport: els.hashToggle.checked,
     action: getAction(),
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -127,28 +120,11 @@ function escapeCsvCell(value) {
   return value;
 }
 
-async function sha256(value) {
-  const encoded = new TextEncoder().encode(value);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", encoded);
-  return [...new Uint8Array(hashBuffer)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function refreshState() {
+function refreshState() {
   const parsed = parseEmails(els.emailInput.value);
   state.valid = parsed.valid;
   state.invalid = parsed.invalid;
   state.duplicates = parsed.duplicates;
-
-  if (els.hashToggle.checked && !window.crypto?.subtle) {
-    els.hashToggle.checked = false;
-    showToast("Hash export is not available in this browser.");
-  }
-
-  state.hashed = els.hashToggle.checked
-    ? await Promise.all(state.valid.map((email) => sha256(email)))
-    : [];
 
   els.validCount.textContent = state.valid.length;
   els.duplicateCount.textContent = state.duplicates.length;
@@ -166,11 +142,11 @@ async function refreshState() {
 }
 
 function getExportValues() {
-  return els.hashToggle.checked ? state.hashed : state.valid;
+  return state.valid;
 }
 
 function getColumnName() {
-  return els.hashToggle.checked ? "sha256" : "email";
+  return "email";
 }
 
 function buildCsv() {
@@ -185,14 +161,11 @@ function buildPayload() {
   const addToAudience = action === "include";
   const userAttributeKey = `audience_${audienceName}`;
   const emails = state.valid;
-  const hashes = state.hashed;
 
   return {
-    eventAudienceApi: emails.map((email, index) => ({
+    eventAudienceApi: emails.map((email) => ({
       environment: "production",
-      user_identities: els.hashToggle.checked
-        ? { other: hashes[index] }
-        : { email },
+      user_identities: { email },
       user_attributes: {
         [userAttributeKey]: addToAudience,
       },
@@ -201,16 +174,15 @@ function buildPayload() {
       accountId: els.accountId.value.trim() || "REPLACE_ME",
       list: audienceName,
       action,
-      [els.hashToggle.checked ? "sha256s" : "emails"]: getExportValues(),
+      emails: getExportValues(),
     },
   };
 }
 
 function buildCurl() {
   const payload = buildPayload().deprecatedCustomAudienceApi;
-  const publicKey = els.publicKey.value.trim() || "rpub-REPLACE_ME";
   return String.raw`curl -X POST https://data.rokt.com/v3/import/suppression \
-  --user "${publicKey}:PRIVATE_KEY_FROM_FORM" \
+  --header "Authorization: Bearer JWT_FROM_FORM" \
   --header "Content-Type: application/json" \
   --data '${JSON.stringify(payload)}'`;
 }
@@ -219,11 +191,9 @@ function buildUploadRequest() {
   const audienceName = slugify(els.audienceName.value, "audience");
   return {
     accountId: els.accountId.value.trim(),
-    publicKey: els.publicKey.value.trim(),
-    privateKey: els.privateKey.value.trim(),
+    jwtToken: els.jwtToken.value.trim(),
     list: audienceName,
     action: getAction(),
-    identifierType: els.hashToggle.checked ? "sha256" : "email",
     identifiers: getExportValues(),
   };
 }
@@ -356,7 +326,7 @@ els.fileInput.addEventListener("change", async () => {
   const separator = els.emailInput.value.trim() ? "\n" : "";
   els.emailInput.value = `${els.emailInput.value.trim()}${separator}${text}`;
   els.fileInput.value = "";
-  await refreshState();
+  refreshState();
   showToast("File imported.");
 });
 
@@ -365,13 +335,6 @@ async function uploadToRokt() {
 
   if (window.location.protocol === "file:") {
     setUploadStatus("Open the local server URL to upload to Rokt.", "error");
-    return;
-  }
-
-  const publicKey = els.publicKey.value.trim();
-  const privateKey = els.privateKey.value.trim();
-  if ((publicKey && !privateKey) || (!publicKey && privateKey)) {
-    setUploadStatus("Enter both key fields, or leave both blank to use .env.", "error");
     return;
   }
 

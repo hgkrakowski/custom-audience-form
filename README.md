@@ -9,7 +9,7 @@ A small local browser tool for preparing Rokt custom audience email lists.
 - Removes duplicates.
 - Flags invalid entries.
 - Downloads a clean CSV.
-- Can export either plain emails or SHA-256 hashes.
+- Exports plain email CSVs.
 - Previews API payloads for Rokt's current Event and Audience API pattern and the deprecated Custom Audience Import API.
 
 ## Use it
@@ -20,15 +20,15 @@ For direct upload:
 
 1. Run `node server.js`.
 2. Open `http://127.0.0.1:8787`.
-3. Add the Rokt public/private key pair in the form before uploading.
+3. Add the JWT in the form before uploading.
 
-You can also copy `.env.example` to `.env` and store the key pair plus account ID locally. The form-provided keys are used first; `.env` is only a fallback. Do not commit `.env`.
+You can also copy `.env.example` to `.env` and store `ROKT_JWT` plus account ID locally. The form-provided JWT is used first; `.env` is only a fallback. Do not commit `.env`.
 
 ## Rokt upload path
 
 Rokt's docs currently recommend the Event and Audience API for audience updates. The older Custom Audience Import API is still documented, but marked deprecated.
 
-The included local server posts to the deprecated Custom Audience Import API because it supports batch list uploads directly. For a production version, migrate the upload route to the Event and Audience API so the audience is updated through the current server-to-server path.
+The included local server posts to the deprecated Custom Audience Import API because it supports batch list uploads directly. It now sends authorization as `Bearer <JWT>` for team testing. Rokt's public documentation for this endpoint still shows Basic auth, so confirm the JWT-enabled endpoint/auth contract with your Rokt team before relying on production uploads.
 
 Useful docs:
 

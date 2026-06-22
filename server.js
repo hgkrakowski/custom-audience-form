@@ -41,17 +41,15 @@ server.listen(PORT, "127.0.0.1", () => {
 
 async function handleUpload(req, res) {
   const body = await readJsonBody(req);
-  const publicKey = String(body.publicKey || process.env.ROKT_PUBLIC_KEY || "").trim();
-  const privateKey = String(body.privateKey || process.env.ROKT_SECRET_KEY || "").trim();
+  const jwtToken = normalizeJwt(body.jwtToken || process.env.ROKT_JWT || "");
   const identifiers = Array.isArray(body.identifiers) ? body.identifiers : [];
-  const identifierType = body.identifierType === "sha256" ? "sha256" : "email";
   const action = body.action === "exclude" ? "exclude" : "include";
   const list = cleanListName(body.list);
   const accountId = String(body.accountId || process.env.ROKT_ACCOUNT_ID || "").trim();
 
-  if (!publicKey || !privateKey) {
+  if (!jwtToken) {
     sendJson(res, 400, {
-      error: "Enter public and private keys in the form, or set ROKT_PUBLIC_KEY and ROKT_SECRET_KEY in .env.",
+      error: "Enter a JWT in the form, or set ROKT_JWT in .env.",
     });
     return;
   }
@@ -75,13 +73,13 @@ async function handleUpload(req, res) {
     accountId,
     list,
     action,
-    [identifierType === "sha256" ? "sha256s" : "emails"]: identifiers,
+    emails: identifiers,
   };
 
   const response = await fetch(ROKT_ENDPOINT, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${Buffer.from(`${publicKey}:${privateKey}`).toString("base64")}`,
+      Authorization: `Bearer ${jwtToken}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
@@ -152,6 +150,10 @@ function readJsonBody(req) {
 function sendJson(res, status, data) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(data));
+}
+
+function normalizeJwt(value) {
+  return String(value || "").trim().replace(/^Bearer\s+/i, "");
 }
 
 function cleanListName(value) {
