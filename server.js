@@ -79,7 +79,7 @@ async function handleUpload(req, res) {
   const response = await fetch(ROKT_ENDPOINT, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${jwtToken}`,
+      ...buildAuthHeaders(jwtToken),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
@@ -152,8 +152,26 @@ function sendJson(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
+function buildAuthHeaders(jwtToken) {
+  const tokenHeaderName = normalizeHeaderName(process.env.ROKT_JWT_HEADER || "auth-token");
+  const headers = {
+    Authorization: `Bearer ${jwtToken}`,
+  };
+
+  if (tokenHeaderName.toLowerCase() !== "authorization") {
+    headers[tokenHeaderName] = jwtToken;
+  }
+
+  return headers;
+}
+
 function normalizeJwt(value) {
   return String(value || "").trim().replace(/^Bearer\s+/i, "");
+}
+
+function normalizeHeaderName(value) {
+  const headerName = String(value || "").trim();
+  return /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(headerName) ? headerName : "auth-token";
 }
 
 function cleanListName(value) {

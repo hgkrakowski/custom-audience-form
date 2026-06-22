@@ -28,7 +28,7 @@ You can also copy `.env.example` to `.env` and store `ROKT_JWT` plus account ID 
 
 Rokt's docs currently recommend the Event and Audience API for audience updates. The older Custom Audience Import API is still documented, but marked deprecated.
 
-The included local server posts to the deprecated Custom Audience Import API because it supports batch list uploads directly. It now sends authorization as `Bearer <JWT>` for team testing. Rokt's public documentation for this endpoint still shows Basic auth, so confirm the JWT-enabled endpoint/auth contract with your Rokt team before relying on production uploads.
+The included local server posts to the deprecated Custom Audience Import API because it supports batch list uploads directly. It sends the JWT as both `Authorization: Bearer <JWT>` and `auth-token: <JWT>` by default for team testing. Set `ROKT_JWT_HEADER` in `.env` if your JWT-enabled endpoint expects a different token header. Rokt's public documentation for this endpoint still shows Basic auth, so confirm the JWT-enabled endpoint/auth contract with your Rokt team before relying on production uploads.
 
 Useful docs:
 

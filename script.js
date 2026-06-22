@@ -183,6 +183,7 @@ function buildCurl() {
   const payload = buildPayload().deprecatedCustomAudienceApi;
   return String.raw`curl -X POST https://data.rokt.com/v3/import/suppression \
   --header "Authorization: Bearer JWT_FROM_FORM" \
+  --header "auth-token: JWT_FROM_FORM" \
   --header "Content-Type: application/json" \
   --data '${JSON.stringify(payload)}'`;
 }
