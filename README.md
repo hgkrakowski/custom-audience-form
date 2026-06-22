@@ -20,15 +20,15 @@ For direct upload:
 
 1. Run `node server.js`.
 2. Open `http://127.0.0.1:8787`.
-3. Add the JWT in the form before uploading.
+3. Add the Rokt public/secret key pair in the form before uploading.
 
-You can also copy `.env.example` to `.env` and store `ROKT_JWT` plus account ID locally. The form-provided JWT is used first; `.env` is only a fallback. Do not commit `.env`.
+You can also copy `.env.example` to `.env` and store `ROKT_PUBLIC_KEY`, `ROKT_SECRET_KEY`, and account ID locally. The form-provided keys are used first; `.env` is only a fallback. Do not commit `.env`.
 
 ## Rokt upload path
 
 Rokt's docs currently recommend the Event and Audience API for audience updates. The older Custom Audience Import API is still documented, but marked deprecated.
 
-The included local server posts to the deprecated Custom Audience Import API because it supports batch list uploads directly. It sends the JWT as both `Authorization: Bearer <JWT>` and `auth-token: <JWT>` by default for team testing. Set `ROKT_JWT_HEADER` in `.env` if your JWT-enabled endpoint expects a different token header. Rokt's public documentation for this endpoint still shows Basic auth, so confirm the JWT-enabled endpoint/auth contract with your Rokt team before relying on production uploads.
+The included local server posts to the deprecated Custom Audience Import API because it supports batch list uploads directly. It sends documented Basic auth using the Rokt public key as the username and the Rokt secret key as the password.
 
 Useful docs:
 

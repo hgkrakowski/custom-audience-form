@@ -2,7 +2,8 @@ const els = {
   form: document.querySelector("#audienceForm"),
   audienceName: document.querySelector("#audienceName"),
   accountId: document.querySelector("#accountId"),
-  jwtToken: document.querySelector("#jwtToken"),
+  publicKey: document.querySelector("#publicKey"),
+  secretKey: document.querySelector("#secretKey"),
   emailInput: document.querySelector("#emailInput"),
   fileInput: document.querySelector("#fileInput"),
   headerToggle: document.querySelector("#headerToggle"),
@@ -38,6 +39,7 @@ function loadSettings() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     if (typeof saved.audienceName === "string") els.audienceName.value = saved.audienceName;
     if (typeof saved.accountId === "string") els.accountId.value = saved.accountId;
+    if (typeof saved.publicKey === "string") els.publicKey.value = saved.publicKey;
     if (typeof saved.includeHeader === "boolean") els.headerToggle.checked = saved.includeHeader;
     if (typeof saved.action === "string") {
       const actionInput = document.querySelector(`input[name="action"][value="${saved.action}"]`);
@@ -57,6 +59,7 @@ function saveSettings() {
   const settings = {
     audienceName: els.audienceName.value.trim(),
     accountId: els.accountId.value.trim(),
+    publicKey: els.publicKey.value.trim(),
     includeHeader: els.headerToggle.checked,
     action: getAction(),
   };
@@ -181,9 +184,9 @@ function buildPayload() {
 
 function buildCurl() {
   const payload = buildPayload().deprecatedCustomAudienceApi;
+  const publicKey = els.publicKey.value.trim() || "rpub-REPLACE_ME";
   return String.raw`curl -X POST https://data.rokt.com/v3/import/suppression \
-  --header "Authorization: Bearer JWT_FROM_FORM" \
-  --header "auth-token: JWT_FROM_FORM" \
+  --user "${publicKey}:RSEC_FROM_FORM" \
   --header "Content-Type: application/json" \
   --data '${JSON.stringify(payload)}'`;
 }
@@ -192,7 +195,8 @@ function buildUploadRequest() {
   const audienceName = slugify(els.audienceName.value, "audience");
   return {
     accountId: els.accountId.value.trim(),
-    jwtToken: els.jwtToken.value.trim(),
+    publicKey: els.publicKey.value.trim(),
+    secretKey: els.secretKey.value.trim(),
     list: audienceName,
     action: getAction(),
     identifiers: getExportValues(),
@@ -336,6 +340,13 @@ async function uploadToRokt() {
 
   if (window.location.protocol === "file:") {
     setUploadStatus("Open the local server URL to upload to Rokt.", "error");
+    return;
+  }
+
+  const publicKey = els.publicKey.value.trim();
+  const secretKey = els.secretKey.value.trim();
+  if ((publicKey && !secretKey) || (!publicKey && secretKey)) {
+    setUploadStatus("Enter both key fields, or leave both blank to use .env.", "error");
     return;
   }
 

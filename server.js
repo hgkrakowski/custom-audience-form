@@ -41,15 +41,16 @@ server.listen(PORT, "127.0.0.1", () => {
 
 async function handleUpload(req, res) {
   const body = await readJsonBody(req);
-  const jwtToken = normalizeJwt(body.jwtToken || process.env.ROKT_JWT || "");
+  const publicKey = String(body.publicKey || process.env.ROKT_PUBLIC_KEY || "").trim();
+  const secretKey = String(body.secretKey || process.env.ROKT_SECRET_KEY || "").trim();
   const identifiers = Array.isArray(body.identifiers) ? body.identifiers : [];
   const action = body.action === "exclude" ? "exclude" : "include";
   const list = cleanListName(body.list);
   const accountId = String(body.accountId || process.env.ROKT_ACCOUNT_ID || "").trim();
 
-  if (!jwtToken) {
+  if (!publicKey || !secretKey) {
     sendJson(res, 400, {
-      error: "Enter a JWT in the form, or set ROKT_JWT in .env.",
+      error: "Enter public and secret keys in the form, or set ROKT_PUBLIC_KEY and ROKT_SECRET_KEY in .env.",
     });
     return;
   }
@@ -79,7 +80,7 @@ async function handleUpload(req, res) {
   const response = await fetch(ROKT_ENDPOINT, {
     method: "POST",
     headers: {
-      ...buildAuthHeaders(jwtToken),
+      Authorization: `Basic ${Buffer.from(`${publicKey}:${secretKey}`).toString("base64")}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
@@ -152,27 +153,6 @@ function sendJson(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
-function buildAuthHeaders(jwtToken) {
-  const tokenHeaderName = normalizeHeaderName(process.env.ROKT_JWT_HEADER || "auth-token");
-  const headers = {
-    Authorization: `Bearer ${jwtToken}`,
-  };
-
-  if (tokenHeaderName.toLowerCase() !== "authorization") {
-    headers[tokenHeaderName] = jwtToken;
-  }
-
-  return headers;
-}
-
-function normalizeJwt(value) {
-  return String(value || "").trim().replace(/^Bearer\s+/i, "");
-}
-
-function normalizeHeaderName(value) {
-  const headerName = String(value || "").trim();
-  return /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(headerName) ? headerName : "auth-token";
-}
 
 function cleanListName(value) {
   return String(value || "audience")
